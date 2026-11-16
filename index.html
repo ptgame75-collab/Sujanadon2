@@ -4,37 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0084ff">
-  <title>Messenger Chat</title>
+  <title>Messenger PWA</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* होम पेजमा फर्किने ब्याक बटनको लागि थप स्टाइल */
-    .back-btn {
-      background: none;
-      border: none;
-      color: #0084ff;
-      font-size: 20px;
-      cursor: pointer;
-      margin-right: 8px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-    }
-  </style>
 </head>
 <body>
 
   <!-- मुख्य च्याट एप कन्टेनर -->
   <div class="app-container" id="chatContainer">
     
-    <!-- माथिल्लो हेडर (ब्याक बटन, प्रोफाइल, नाम र स्टाटस) -->
+    <!-- माथिल्लो हेडर (प्रोफाइल, नाम र स्टाटस) -->
     <header class="chat-header">
       <div class="header-left">
-        <!-- होम पेज (home.html) मा फर्कने ब्याक बटन -->
-        <a href="home.html" class="back-btn" title="Back">❮</a>
         <img id="headerAvatar" src="Sujana.png" alt="Sujana Logo" class="avatar">
         <div class="user-info">
           <h2 id="headerName">सुजाना श्रेष्ठ</h2>
@@ -51,7 +31,7 @@
       <!-- म्यासेजहरू JavaScript बाट यहाँ थपिनेछन् -->
     </main>
 
-    <!-- म्यासेज पठाउने तल्लो भाग -->
+    <!-- म्यासेज पठाउने तल्लो भाग (जुन पहिले एकदम राम्रोसँग मिलेको थियो) -->
     <footer class="chat-input-area">
       <input type="text" id="messageInput" placeholder="म्यासेज लेख्नुहोस्..." autocomplete="off">
       <button id="sendBtn" class="send-btn">➤</button>
@@ -172,16 +152,12 @@
       renderMessages();
     }
 
-    // म्यासेजहरू देख्दा मिति र समय मिलाएर देखाउने
     function renderMessages() {
       chatMessages.innerHTML = '';
       appData.messages.forEach(msg => {
         const div = document.createElement('div');
         div.className = `message ${msg.sender === 'user' ? 'sent' : 'received'}`;
-        
-        // मिति र समय फर्म्याट गर्ने
         const timeDisplay = msg.date ? `${msg.date}, ${msg.time}` : msg.time;
-
         div.innerHTML = `
           <div class="bubble">${msg.text}</div>
           <span class="time">${timeDisplay}</span>
@@ -195,12 +171,11 @@
       localStorage.setItem('hybridChatData', JSON.stringify(appData));
     }
 
-    // मिति र समय दुवै प्राप्त गर्ने फंक्सन
     function getDateTime() {
       const now = new Date();
       const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const date = `${now.getDate()} ${months[now.getMonth()]}`; // जस्तै: 16 Nov
+      const date = `${now.getDate()} ${months[now.getMonth()]}`;
       return { date, time };
     }
 
@@ -339,6 +314,7 @@
       renderRulesList();
     };
 
+    document.getElementById('addRuleBtn').appendEventListener?.('click', () => {}); // placeholder
     document.getElementById('addRuleBtn').addEventListener('click', () => {
       const trigger = document.getElementById('ruleTrigger').value.trim();
       const reply = document.getElementById('ruleReply').value.trim();
@@ -351,7 +327,7 @@
     });
 
     saveSettingsBtn.addEventListener('click', () => {
-      appData.name = document.getElementById('settingName'.trim())?.value?.trim() || "सुजाना श्रेष्ठ";
+      appData.name = document.getElementById('settingName').value.trim() || "सुजाना श्रेष्ठ";
       appData.phone = document.getElementById('settingPhone').value.trim();
       appData.apiKey = document.getElementById('settingApiKey').value.trim();
       appData.persona = document.getElementById('settingPersona').value.trim() || defaultPersona;
