@@ -98,19 +98,16 @@
 </head>
 <body>
 
-  <!-- म्यासेजर होम हेडर -->
   <header class="home-header">
     <span>Chats</span>
   </header>
 
-  <!-- सर्च बक्स -->
   <div class="search-bar-container">
     <input type="text" class="search-bar" placeholder="Search">
   </div>
 
-  <!-- च्याटहरूको सूची (Chat List) -->
   <ul class="chat-list">
-    <!-- सुजानाको च्याट आइटम - यसले सिधै index.html मा लैजान्छ -->
+    <!-- सुजानाको च्याटमा क्लिक गरेपछि index.html (च्याट बक्स) खुल्छ -->
     <a href="index.html" class="chat-item">
       <div class="chat-avatar-container">
         <img src="Sujana.png" alt="Sujana" class="chat-avatar" id="homeAvatar">
@@ -127,7 +124,6 @@
   </ul>
 
   <script>
-    // LocalStorage बाट युजरको नाम, फोटो र अन्तिम म्यासेज लोड गर्ने
     const savedData = JSON.parse(localStorage.getItem('hybridChatData'));
     if (savedData) {
       if (savedData.name) {
@@ -136,13 +132,9 @@
       if (savedData.avatar) {
         document.getElementById('homeAvatar').src = savedData.avatar;
       }
-      
-      // यदि च्याटमा म्यासेजहरू छन् भने अन्तिम म्यासेज र सहि मिति/समय होम पेजमा देखाउने
       if (savedData.messages && savedData.messages.length > 0) {
         const lastMsg = savedData.messages[savedData.messages.length - 1];
         document.getElementById('homeLastMsg').textContent = (lastMsg.sender === 'user' ? 'You: ' : '') + lastMsg.text;
-        
-        // मिति र समय मिलाएर देखाउने (यदि date उपलब्ध छ भने)
         if (lastMsg.date && lastMsg.time) {
           document.getElementById('homeTime').textContent = `${lastMsg.date}, ${lastMsg.time}`;
         } else {
