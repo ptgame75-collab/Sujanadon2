@@ -16,7 +16,7 @@
     <!-- माथिल्लो हेडर (प्रोफाइल, नाम र स्टाटस) -->
     <header class="chat-header">
       <div class="header-left">
-        <img id="headerAvatar" src="https://ui-avatars.com/api/?name=S&background=random" alt="Profile" class="avatar">
+        <img id="headerAvatar" src="Sujana.png" alt="Sujana Logo" class="avatar">
         <div class="user-info">
           <h2 id="headerName">सुजाना श्रेष्ठ</h2>
           <span id="headerStatus" class="status-text">Active now</span>
@@ -122,7 +122,7 @@
     let appData = JSON.parse(localStorage.getItem('hybridChatData')) || {
       name: "सुजाना श्रेष्ठ",
       phone: "",
-      avatar: "https://ui-avatars.com/api/?name=S&background=random",
+      avatar: "Sujana.png",
       wallpaper: "",
       apiKey: "",
       persona: defaultPersona,
@@ -154,7 +154,7 @@
     // ३. UI अपडेट गर्ने फङ्क्सन
     function applySettingsToUI() {
       headerName.textContent = appData.name || "सुजाना श्रेष्ठ";
-      headerAvatar.src = appData.avatar || "https://ui-avatars.com/api/?name=S&background=random";
+      headerAvatar.src = appData.avatar || "Sujana.png";
       
       if (appData.wallpaper) {
         chatContainer.style.backgroundImage = `url('${appData.wallpaper}')`;
@@ -308,6 +308,11 @@
       }
     });
 
+    document.getElementById('resetWallpaperBtn').button?.addEventListener?.('click', () => {
+      appData.wallpaper = "";
+      alert("वालपेपर हटाइयो। सेभ गर्नुहोस्।");
+    });
+
     document.getElementById('resetWallpaperBtn').addEventListener('click', () => {
       appData.wallpaper = "";
       alert("वालपेपर हटाइयो। सेभ गर्नुहोस्।");
@@ -328,8 +333,6 @@
       appData.rules.splice(index, 1);
       renderRulesList();
     };
-
-    document.getElementById('addRuleBtn').appendEventListener('click', () => { ... }); // सुरक्षित रूपमा भइरहेको छ
 
     document.getElementById('addRuleBtn').addEventListener('click', () => {
       const trigger = document.getElementById('ruleTrigger').value.trim();
