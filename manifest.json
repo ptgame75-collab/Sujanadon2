@@ -1,7 +1,7 @@
 {
   "name": "सुजाना श्रेष्ठ - Messenger",
   "short_name": "Sujana Chat",
-  "start_url": "index.html",
+  "start_url": "home.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0084ff",
