@@ -7,12 +7,12 @@
   "theme_color": "#0084ff",
   "icons": [
     {
-      "src": "https://ui-avatars.com/api/?name=S&background=0084ff&color=fff&size=192",
+      "src": "Sujana.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://ui-avatars.com/api/?name=S&background=0084ff&color=fff&size=512",
+      "src": "Sujana.png",
       "sizes": "512x512",
       "type": "image/png"
     }
