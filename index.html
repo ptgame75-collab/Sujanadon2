@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0084ff">
+  <title>Messenger PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- मुख्य च्याट एप कन्टेनर -->
+  <div class="app-container" id="chatContainer">
+    
+    <!-- माथिल्लो हेडर (प्रोफाइल, नाम र स्टाटस) -->
+    <header class="chat-header">
+      <div class="header-left">
+        <img id="headerAvatar" src="https://ui-avatars.com/api/?name=S&background=random" alt="Profile" class="avatar">
+        <div class="user-info">
+          <h2 id="headerName">सुजाना श्रेष्ठ</h2>
+          <span id="headerStatus" class="status-text">Active now</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="openSettingsBtn" class="icon-btn" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <!-- च्याट म्यासेजहरू देखिने मुख्य ठाउँ -->
+    <main class="chat-messages" id="chatMessages">
+      <!-- म्यासेजहरू JavaScript बाट यहाँ थपिनेछन् -->
+    </main>
+
+    <!-- म्यासेज पठाउने तल्लो भाग -->
+    <footer class="chat-input-area">
+      <input type="text" id="messageInput" placeholder="म्यासेज लेख्नुहोस्..." autocomplete="off">
+      <button id="sendBtn" class="send-btn">➤</button>
+    </footer>
+
+  </div>
+
+  <!-- सेटिङ र कस्टमाइजेसन प्यानल (Modal) -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>एप सेटिङ (Customization)</h3>
+        <button id="closeSettingsBtn" class="close-btn">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- प्रोफाइल सेटिङ -->
+        <div class="form-group">
+          <label>नाम (Name):</label>
+          <input type="text" id="settingName" placeholder="जस्तै: सुजाना श्रेष्ठ">
+        </div>
+
+        <div class="form-group">
+          <label>फोन नम्बर (Phone Number):</label>
+          <input type="text" id="settingPhone" placeholder="98XXXXXXXX">
+        </div>
+
+        <div class="form-group">
+          <label>प्रोफाइल फोटो URL वा छान्नुहोस्:</label>
+          <input type="file" id="settingAvatarFile" accept="image/*">
+        </div>
+
+        <div class="form-group">
+          <label>च्याट वालपेपर (Wallpaper):</label>
+          <input type="file" id="settingWallpaperFile" accept="image/*">
+          <button type="button" id="resetWallpaperBtn" class="small-btn">वालपेपर हटाउनुहोस्</button>
+        </div>
+
+        <hr>
+
+        <!-- हाइब्रिड मोड: AI र Custom Rules -->
+        <div class="form-group">
+          <label>Gemini API Key (Smart AI रिप्लाईको लागि):</label>
+          <input type="password" id="settingApiKey" placeholder="AIzaSy...">
+        </div>
+
+        <div class="form-group">
+          <label>AI व्यवहार (Persona Prompt):</label>
+          <textarea id="settingPersona" rows="3" placeholder="उहाँको बोल्ने शैली..."></textarea>
+        </div>
+
+        <hr>
+
+        <!-- Custom Rules थप्ने ठाउँ -->
+        <div class="form-group">
+          <label>निश्चित शब्द र उत्तर (Custom Rules):</label>
+          <div class="rule-inputs">
+            <input type="text" id="ruleTrigger" placeholder="तपाईँको म्यासेज (जस्तै: gm)">
+            <input type="text" id="ruleReply" placeholder="उताको रिप्लाई (जस्तै: गुड मर्निङ)">
+            <button type="button" id="addRuleBtn" class="small-btn">थप्नुहोस्</button>
+          </div>
+          <ul id="rulesList" class="rules-list"></ul>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="clearChatBtn" class="danger-btn">पुरानो च्याट मेटाउनुहोस्</button>
+          <button type="button" id="saveSettingsBtn" class="primary-btn">सेभ गर्नुहोस्</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- मुख्य एप्लिकेसन लजिक (Hybrid Mode + PWA) -->
+  <script>
+    // १. Service Worker दर्ता (PWA इन्स्टल गर्नको लागि)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker Registered'))
+          .catch(err => console.log('SW Error:', err));
+      });
+    }
+
+    // २. डिफल्ट डाटा र सेटिङहरू
+    const defaultPersona = "तिमी एक वास्तविक मान्छे जस्तै नेपालीमा (वा रोमन नेपालीमा) च्याट गर्छौ। तिम्रो स्वभाव अलि टाढा रहने (distant) र कम चासो देखाउने खालको छ। सामान्य म्यासेज (जस्तै: के छ, खाना खायौ) मा एकदमै छोटो १-३ शब्दको उत्तर देऊ (जस्तै: 'ठिक छ', 'अँ', 'खै', 'व्यस्त छु') र उल्टो प्रश्न नसोध। तर यदि प्रयोगकर्ताले लामो वा गम्भीर कुरा लेख्यो भने त्यसै विषयमा मात्र अर्थपूर्ण रिप्लाई देऊ। अनि कहिलेकाहीँ (लगभग १० मध्ये १ पटक) मात्र अलि न्यानो र चासो दिएर बोल।";
+
+    let appData = JSON.parse(localStorage.getItem('hybridChatData')) || {
+      name: "सुजाना श्रेष्ठ",
+      phone: "",
+      avatar: "https://ui-avatars.com/api/?name=S&background=random",
+      wallpaper: "",
+      apiKey: "",
+      persona: defaultPersona,
+      rules: [
+        { trigger: "गुड मर्निङ", reply: "गुड मर्निङ" },
+        { trigger: "gm", reply: "गुड मर्निङ" },
+        { trigger: "के छ खबर", reply: "ठिक छ" },
+        { trigger: "कस्तो छ", reply: "ठिक छ" }
+      ],
+      messages: []
+    };
+
+    // DOM Elements
+    const chatContainer = document.getElementById('chatContainer');
+    const headerName = document.getElementById('headerName');
+    const headerAvatar = document.getElementById('headerAvatar');
+    const headerStatus = document.getElementById('headerStatus');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Settings Elements
+    const settingsModal = document.getElementById('settingsModal');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+
+    // ३. UI अपडेट गर्ने फङ्क्सन
+    function applySettingsToUI() {
+      headerName.textContent = appData.name || "सुजाना श्रेष्ठ";
+      headerAvatar.src = appData.avatar || "https://ui-avatars.com/api/?name=S&background=random";
+      
+      if (appData.wallpaper) {
+        chatContainer.style.backgroundImage = `url('${appData.wallpaper}')`;
+        chatContainer.style.backgroundSize = "cover";
+        chatContainer.style.backgroundPosition = "center";
+      } else {
+        chatContainer.style.backgroundImage = "none";
+      }
+      renderMessages();
+    }
+
+    // ४. म्यासेजहरू स्क्रिनमा देखाउने
+    function renderMessages() {
+      chatMessages.innerHTML = '';
+      appData.messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `message ${msg.sender === 'user' ? 'sent' : 'received'}`;
+        div.innerHTML = `
+          <div class="bubble">${msg.text}</div>
+          <span class="time">${msg.time}</span>
+        `;
+        chatMessages.appendChild(div);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function saveData() {
+      localStorage.setItem('hybridChatData', JSON.stringify(appData));
+    }
+
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ५. म्यासेज पठाउने र हाइब्रिड रिप्लाई लिने लजिक
+    async function handleSendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      // प्रयोगकर्ताको म्यासेज थप्ने
+      appData.messages.push({ sender: 'user', text: text, time: getCurrentTime() });
+      messageInput.value = '';
+      saveData();
+      renderMessages();
+
+      // प्राकृतिक ढिलाइ (Typing delay)
+      const waitBeforeTyping = Math.floor(Math.random() * 2000) + 1000; // 1-3 sec
+      setTimeout(async () => {
+        headerStatus.textContent = "Typing...";
+        headerStatus.classList.add('typing');
+
+        const replyText = await generateHybridReply(text);
+
+        const typingDuration = Math.min(Math.max(replyText.length * 60, 1200), 4000);
+        setTimeout(() => {
+          headerStatus.textContent = "Active now";
+          headerStatus.classList.remove('typing');
+
+          appData.messages.push({ sender: 'bot', text: replyText, time: getCurrentTime() });
+          saveData();
+          renderMessages();
+        }, typingDuration);
+
+      }, waitBeforeTyping);
+    }
+
+    // ६. Hybrid Logic (पहिले Custom Rules, नभए AI)
+    async function generateHybridReply(userText) {
+      const lowerText = userText.toLowerCase();
+
+      // चरण १: Custom Rules जाँच गर्ने
+      for (let rule of appData.rules) {
+        if (lowerText.includes(rule.trigger.toLowerCase())) {
+          return rule.reply;
+        }
+      }
+
+      // चरण २: Gemini API बाट Dynamic Reply लिने
+      if (appData.apiKey) {
+        try {
+          const isWarmMood = Math.random() < 0.15; // १५% मौका राम्रोसँग चासो दिएर बोल्ने
+          const moodInstruction = isWarmMood 
+            ? "अहिले तिम्रो मुड अलि राम्रो छ, त्यसैले थोरै न्यानो र चासो दिएर रिप्लाई देऊ।" 
+            : "अहिले तिमी अलि व्यस्त र टाढा छौ, त्यसैले धेरै चासो नदेखाई छोटो वा विषयवस्तुमा मात्र सीमित रहेर रिप्लाई देऊ।";
+
+          const recentHistory = appData.messages.slice(-6).map(m => `${m.sender === 'user' ? 'User' : 'You'}: ${m.text}`).join("\n");
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appData.apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `${appData.persona}\n${moodInstruction}\n\nपछिल्लो कुराकानी:\n${recentHistory}\nUser: ${userText}\nYou:`
+                }]
+              }]
+            })
+          });
+
+          const data = await response.json();
+          if (data.candidates && data.candidates[0].content.parts[0].text) {
+            return data.candidates[0].content.parts[0].text.trim();
+          }
+        } catch (error) {
+          console.error("AI Error:", error);
+        }
+      }
+
+      // यदि API Key छैन र Rule पनि मिलेन भने स्वाभाविक छोटो उत्तर
+      const fallbackReplies = ["अँ", "ठिक छ", "खै", "हस", "अहिले अलि व्यस्त छु"];
+      return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener('click', handleSendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSendMessage();
+    });
+
+    // Settings Modal Logic
+    openSettingsBtn.addEventListener('click', () => {
+      document.getElementById('settingName').value = appData.name;
+      document.getElementById('settingPhone').value = appData.phone;
+      document.getElementById('settingApiKey').value = appData.apiKey;
+      document.getElementById('settingPersona').value = appData.persona;
+      renderRulesList();
+      settingsModal.style.display = 'flex';
+    });
+
+    closeSettingsBtn.addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    // प्रोफाइल फोटो र वालपेपर अपलोड (Base64 मा सेभ)
+    document.getElementById('settingAvatarFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => { appData.avatar = reader.result; };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('settingWallpaperFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => { appData.wallpaper = reader.result; };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('resetWallpaperBtn').addEventListener('click', () => {
+      appData.wallpaper = "";
+      alert("वालपेपर हटाइयो। सेभ गर्नुहोस्।");
+    });
+
+    // Custom Rules व्यवस्थापन
+    function renderRulesList() {
+      const list = document.getElementById('rulesList');
+      list.innerHTML = '';
+      appData.rules.forEach((rule, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span><b>${rule.trigger}</b> ➔ ${rule.reply}</span> <button onclick="deleteRule(${index})">✕</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    window.deleteRule = function(index) {
+      appData.rules.splice(index, 1);
+      renderRulesList();
+    };
+
+    document.getElementById('addRuleBtn').appendEventListener('click', () => { ... }); // सुरक्षित रूपमा भइरहेको छ
+
+    document.getElementById('addRuleBtn').addEventListener('click', () => {
+      const trigger = document.getElementById('ruleTrigger').value.trim();
+      const reply = document.getElementById('ruleReply').value.trim();
+      if (trigger && reply) {
+        appData.rules.push({ trigger, reply });
+        document.getElementById('ruleTrigger').value = '';
+        document.getElementById('ruleReply').value = '';
+        renderRulesList();
+      }
+    });
+
+    saveSettingsBtn.addEventListener('click', () => {
+      appData.name = document.getElementById('settingName').value.trim() || "सुजाना श्रेष्ठ";
+      appData.phone = document.getElementById('settingPhone').value.trim();
+      appData.apiKey = document.getElementById('settingApiKey').value.trim();
+      appData.persona = document.getElementById('settingPersona').value.trim() || defaultPersona;
+      saveData();
+      applySettingsToUI();
+      settingsModal.style.display = 'none';
+    });
+
+    clearChatBtn.addEventListener('click', () => {
+      if (confirm("के तपाईँ सबै पुरानो च्याट मेटाउन चाहनुहुन्छ?")) {
+        appData.messages = [];
+        saveData();
+        renderMessages();
+        settingsModal.style.display = 'none';
+      }
+    });
+
+    // सुरुवाती लोड
+    applySettingsToUI();
+  </script>
+</body>
+</html>
