@@ -4,17 +4,63 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0084ff">
-  <title>Messenger PWA</title>
+  <title>Messenger Chat</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* मोबाइलमा म्यासेज बक्स सधैँ तल ठीक ठाउँमा बस्ने सुनिश्चित गर्न */
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: #fff;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chat-input-area {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      background-color: #ffffff;
+      border-top: 1px solid #e4e6eb;
+      flex-shrink: 0;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: #0084ff;
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 10px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- मुख्य च्याट एप कन्टेनर -->
   <div class="app-container" id="chatContainer">
     
-    <!-- माथिल्लो हेडर (प्रोफाइल, नाम र स्टाटस) -->
     <header class="chat-header">
       <div class="header-left">
+        <!-- होम पेजमा फर्किने ब्याक बटन -->
+        <a href="home.html" class="back-btn" title="Back">❮</a>
         <img id="headerAvatar" src="Sujana.png" alt="Sujana Logo" class="avatar">
         <div class="user-info">
           <h2 id="headerName">सुजाना श्रेष्ठ</h2>
@@ -26,12 +72,10 @@
       </div>
     </header>
 
-    <!-- च्याट म्यासेजहरू देखिने मुख्य ठाउँ -->
     <main class="chat-messages" id="chatMessages">
-      <!-- म्यासेजहरू JavaScript बाट यहाँ थपिनेछन् -->
+      <!-- म्यासेजहरू यहाँ देखिनेछन् -->
     </main>
 
-    <!-- म्यासेज पठाउने तल्लो भाग (जुन पहिले एकदम राम्रोसँग मिलेको थियो) -->
     <footer class="chat-input-area">
       <input type="text" id="messageInput" placeholder="म्यासेज लेख्नुहोस्..." autocomplete="off">
       <button id="sendBtn" class="send-btn">➤</button>
@@ -39,7 +83,7 @@
 
   </div>
 
-  <!-- सेटिङ र कस्टमाइजेसन प्यानल (Modal) -->
+  <!-- सेटिङ मोडल -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -50,7 +94,7 @@
       <div class="modal-body">
         <div class="form-group">
           <label>नाम (Name):</label>
-          <input type="text" id="settingName" placeholder="जस्तै: सुजाना श्रेष्ठ">
+          <input type="text" id="settingName" placeholder="सुजाना श्रेष्ठ">
         </div>
 
         <div class="form-group">
@@ -59,7 +103,7 @@
         </div>
 
         <div class="form-group">
-          <label>प्रोफाइल फोटो URL वा छान्नुहोस्:</label>
+          <label>प्रोफाइल फोटो फेर्नुहोस्:</label>
           <input type="file" id="settingAvatarFile" accept="image/*">
         </div>
 
@@ -72,7 +116,7 @@
         <hr>
 
         <div class="form-group">
-          <label>Gemini API Key (Smart AI रिप्लाईको लागि):</label>
+          <label>Gemini API Key:</label>
           <input type="password" id="settingApiKey" placeholder="AIzaSy...">
         </div>
 
@@ -84,10 +128,10 @@
         <hr>
 
         <div class="form-group">
-          <label>निश्चित शब्द र उत्तर (Custom Rules):</label>
+          <label>Custom Rules:</label>
           <div class="rule-inputs">
-            <input type="text" id="ruleTrigger" placeholder="तपाईँको म्यासेज">
-            <input type="text" id="ruleReply" placeholder="उताको रिप्लाई">
+            <input type="text" id="ruleTrigger" placeholder="म्यासेज">
+            <input type="text" id="ruleReply" placeholder="उत्तर">
             <button type="button" id="addRuleBtn" class="small-btn">थप्नुहोस्</button>
           </div>
           <ul id="rulesList" class="rules-list"></ul>
@@ -101,12 +145,8 @@
     </div>
   </div>
 
-  <!-- मुख्य एप्लिकेसन लजिक -->
   <script>
-    const defaultPersona = `तिमी एक वास्तविक मान्छे (सुजाना) हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। 
-तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने र सधैँ एकै किसिमको उत्तर नदिने खालको छ। 
-कसैले म्यासेज गर्दा सधैँ "व्यस्त छु" वा "ठिक छ" मात्र नभनी, म्यासेजको भाव बुझेर फरक-फरक र प्राकृतिक शैलीमा छोटकरीमा (१-३ शब्द वा एक वाक्यमा) उत्तर देऊ। 
-यदि म्यासेज मायालु वा गहिरो छ भने सोही अनुसार अलि नरम वा वास्तविक प्रतिक्रिया देऊ, र अनावश्यक रूपमा धेरै लामा कुरा नगर।`;
+    const defaultPersona = `तिमी एक वास्तविक मान्छे (सुजाना) हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने र सधैँ एकै किसिमको उत्तर नदिने खालको छ। म्यासेजको भाव बुझेर छोटो (१-३ शब्द) र प्राकृतिक उत्तर देऊ।`;
 
     let appData = JSON.parse(localStorage.getItem('hybridChatData')) || {
       name: "सुजाना श्रेष्ठ",
@@ -141,7 +181,6 @@
     function applySettingsToUI() {
       headerName.textContent = appData.name || "सुजाना श्रेष्ठ";
       headerAvatar.src = appData.avatar || "Sujana.png";
-      
       if (appData.wallpaper) {
         chatContainer.style.backgroundImage = `url('${appData.wallpaper}')`;
         chatContainer.style.backgroundSize = "cover";
@@ -184,12 +223,7 @@
       if (!text) return;
 
       const currentDT = getDateTime();
-      appData.messages.push({ 
-        sender: 'user', 
-        text: text, 
-        time: currentDT.time, 
-        date: currentDT.date 
-      });
+      appData.messages.push({ sender: 'user', text: text, time: currentDT.time, date: currentDT.date });
       messageInput.value = '';
       saveData();
       renderMessages();
@@ -207,12 +241,7 @@
           headerStatus.classList.remove('typing');
 
           const replyDT = getDateTime();
-          appData.messages.push({ 
-            sender: 'bot', 
-            text: replyText, 
-            time: replyDT.time, 
-            date: replyDT.date 
-          });
+          appData.messages.push({ sender: 'bot', text: replyText, time: replyDT.time, date: replyDT.date });
           saveData();
           renderMessages();
         }, typingDuration);
@@ -222,7 +251,6 @@
 
     async function generateHybridReply(userText) {
       const lowerText = userText.toLowerCase();
-
       for (let rule of appData.rules) {
         if (lowerText === rule.trigger.toLowerCase()) {
           return rule.reply;
@@ -232,19 +260,17 @@
       if (appData.apiKey) {
         try {
           const recentHistory = appData.messages.slice(-6).map(m => `${m.sender === 'user' ? 'User' : 'You'}: ${m.text}`).join("\n");
-
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appData.apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `${appData.persona}\n\nपछिल्लो कुराकानीको इतिहास:\n${recentHistory}\n\nUser को नयाँ म्यासेज: "${userText}"\n\nमाथिको म्यासेजको भाव र सन्दर्भ बुझेर आफ्नो स्वभाव अनुसार प्राकृतिक रूपमा छोटो उत्तर देऊ:`
+                  text: `${appData.persona}\n\nइतिहास:\n${recentHistory}\n\nUser: "${userText}"\nउत्तर:`
                 }]
               }]
             })
           });
-
           const data = await response.json();
           if (data.candidates && data.candidates[0].content.parts[0].text) {
             return data.candidates[0].content.parts[0].text.trim();
@@ -254,7 +280,7 @@
         }
       }
 
-      const fallbackReplies = ["अँ भन", "ल न", "खै", "त्यस्तै हो", "अहिले अलि काममा छु ल", "बुझेँ नि"];
+      const fallbackReplies = ["अँ", "ठिक छ", "खै", "अहिले अलि काममा छु", "हस"];
       return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
     }
 
@@ -314,7 +340,6 @@
       renderRulesList();
     };
 
-    document.getElementById('addRuleBtn').appendEventListener?.('click', () => {}); // placeholder
     document.getElementById('addRuleBtn').addEventListener('click', () => {
       const trigger = document.getElementById('ruleTrigger').value.trim();
       const reply = document.getElementById('ruleReply').value.trim();
@@ -328,7 +353,7 @@
 
     saveSettingsBtn.addEventListener('click', () => {
       appData.name = document.getElementById('settingName').value.trim() || "सुजाना श्रेष्ठ";
-      appData.phone = document.getElementById('settingPhone').value.trim();
+      appData.phone = document.getElementById('settingPhone.trim()') ? document.getElementById('settingPhone').value.trim() : "";
       appData.apiKey = document.getElementById('settingApiKey').value.trim();
       appData.persona = document.getElementById('settingPersona').value.trim() || defaultPersona;
       saveData();
