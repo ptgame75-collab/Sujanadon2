@@ -3,166 +3,658 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#ffffff">
-  <title>Messenger - Chats</title>
+  <meta name="theme-color" content="#0084ff">
+  <title>Message</title>
+  <link rel="stylesheet" href="style.css?v=5">
   <style>
     * {
       box-sizing: border-box;
     }
-    body {
-      background-color: #ffffff;
+
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    .home-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 20px;
-      font-size: 24px;
-      font-weight: bold;
-      color: #050505;
-    }
-    .search-bar-container {
-      padding: 0 16px 10px 16px;
-    }
-    .search-bar {
+
+    .app-container {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
-      padding: 10px 15px;
-      background-color: #f0f2f5;
-      border: none;
-      border-radius: 20px;
-      font-size: 15px;
-      outline: none;
-      color: #050505;
-    }
-    .chat-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .chat-item {
+      height: 100%;
       display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
-      color: inherit;
-    }
-    .chat-item:hover {
-      background-color: #f5f6f7;
-    }
-    .chat-avatar-container {
-      position: relative;
-      margin-right: 14px;
-      flex-shrink: 0;
-    }
-    .chat-avatar {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .online-badge {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 14px;
-      height: 14px;
-      background-color: #31a24c;
-      border: 2px solid #ffffff;
-      border-radius: 50%;
-    }
-    .chat-details {
-      flex: 1;
+      flex-direction: column;
+      background-color: #ffffff;
       overflow: hidden;
     }
-    .chat-name {
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background-color: #ffffff;
+      border-bottom: 1px solid #e4e6eb;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      color: #0084ff;
+      font-size: 24px;
+      padding: 4px 8px 4px 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .user-info h2 {
+      margin: 0;
       font-size: 16px;
       font-weight: 600;
       color: #050505;
-      margin: 0 0 4px 0;
-    }
-    .chat-last-msg {
-      font-size: 14px;
-      color: #65676b;
-      margin: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .chat-meta {
+
+    .status-text {
       font-size: 12px;
       color: #65676b;
-      text-align: right;
-      white-space: nowrap;
-      margin-left: 8px;
+    }
+
+    .status-text.typing {
+      color: #0084ff;
+      font-weight: 500;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      flex-shrink: 0;
+    }
+
+    .chat-messages {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background-color: transparent;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 78%;
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .bubble {
+      padding: 9px 14px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .message.sent .bubble {
+      background-color: #0084ff;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.received .bubble {
+      background-color: #f0f2f5;
+      color: #050505;
+      border-bottom-left-radius: 4px;
+    }
+
+    .time {
+      font-size: 11px;
+      color: #8a8d91;
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+
+    /* सधैँ देखिने म्यासेज लेख्ने बक्स */
+    .chat-input-area {
+      display: flex !important;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 60px;
+      padding: 10px 12px;
+      background-color: #ffffff;
+      border-top: 1px solid #e4e6eb;
+      flex-shrink: 0;
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 30;
+    }
+
+    #messageInput {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 10px 14px;
+      border: 1px solid #ccd0d5;
+      border-radius: 20px;
+      font-size: 15px;
+      outline: none;
+      background-color: #f0f2f5;
+      color: #050505;
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background-color: #0084ff;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
 
-  <header class="home-header">
-    <span>Chats</span>
-  </header>
+  <div class="app-container" id="chatContainer">
 
-  <div class="search-bar-container">
-    <input type="text" class="search-bar" id="searchInput" placeholder="Search">
+    <header class="chat-header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn" title="Back">❮</a>
+        <img id="headerAvatar" src="Sujana.png" alt="Sujana Logo" class="avatar">
+        <div class="user-info">
+          <h2 id="headerName">सुजाना श्रेष्ठ</h2>
+          <span id="headerStatus" class="status-text">Active now</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="openSettingsBtn" class="icon-btn" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <main class="chat-messages" id="chatMessages"></main>
+
+    <div class="chat-input-area" id="chatInputArea">
+      <input type="text" id="messageInput" placeholder="म्यासेज लेख्नुहोस्..." autocomplete="off">
+      <button id="sendBtn" class="send-btn">➤</button>
+    </div>
+
   </div>
 
-  <ul class="chat-list">
-    <a href="message.html" class="chat-item" id="sujanaChatItem">
-      <div class="chat-avatar-container">
-        <img src="Sujana.png" alt="Sujana" class="chat-avatar" id="homeAvatar">
-        <span class="online-badge"></span>
+  <!-- सेटिङ मोडल -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>एप सेटिङ (Customization)</h3>
+        <button id="closeSettingsBtn" class="close-btn">✕</button>
       </div>
-      <div class="chat-details">
-        <h4 class="chat-name" id="homeName">सुजाना श्रेष्ठ</h4>
-        <p class="chat-last-msg" id="homeLastMsg">Active now</p>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>नाम (Name):</label>
+          <input type="text" id="settingName" placeholder="सुजाना श्रेष्ठ">
+        </div>
+
+        <div class="form-group">
+          <label>फोन नम्बर (Phone Number):</label>
+          <input type="text" id="settingPhone" placeholder="98XXXXXXXX">
+        </div>
+
+        <div class="form-group">
+          <label>प्रोफाइल फोटो छान्नुहोस्:</label>
+          <input type="file" id="settingAvatarFile" accept="image/*">
+        </div>
+
+        <div class="form-group">
+          <label>च्याट वालपेपर (Wallpaper):</label>
+          <input type="file" id="settingWallpaperFile" accept="image/*">
+          <button type="button" id="resetWallpaperBtn" class="small-btn">वालपेपर हटाउनुहोस्</button>
+        </div>
+
+        <hr>
+
+        <div class="form-group">
+          <label>Gemini API Key (Smart AI रिप्लाईको लागि):</label>
+          <input type="password" id="settingApiKey" placeholder="AIzaSy...">
+        </div>
+
+        <div class="form-group">
+          <label>AI व्यवहार (Persona Prompt):</label>
+          <textarea id="settingPersona" rows="4" placeholder="उहाँको बोल्ने शैली..."></textarea>
+        </div>
+
+        <hr>
+
+        <div class="form-group">
+          <label>निश्चित शब्द र उत्तर (Custom Rules):</label>
+          <div class="rule-inputs">
+            <input type="text" id="ruleTrigger" placeholder="तपाईँको म्यासेज">
+            <input type="text" id="ruleReply" placeholder="उताको रिप्लाई">
+            <button type="button" id="addRuleBtn" class="small-btn">थप्नुहोस्</button>
+          </div>
+          <ul id="rulesList" class="rules-list"></ul>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="clearChatBtn" class="danger-btn">पुरानो च्याट मेटाउनुहोस्</button>
+          <button type="button" id="saveSettingsBtn" class="primary-btn">सेभ गर्नुहोस्</button>
+        </div>
       </div>
-      <div class="chat-meta">
-        <span id="homeTime">अहिले</span>
-      </div>
-    </a>
-  </ul>
+    </div>
+  </div>
 
   <script>
-    function syncHomeData() {
-      try {
-        const savedData = JSON.parse(localStorage.getItem('hybridChatData'));
-        if (!savedData) return;
-
-        if (savedData.name) {
-          document.getElementById('homeName').textContent = savedData.name;
-        }
-        if (savedData.avatar) {
-          document.getElementById('homeAvatar').src = savedData.avatar;
-        }
-        if (savedData.messages && savedData.messages.length > 0) {
-          const lastMsg = savedData.messages[savedData.messages.length - 1];
-          document.getElementById('homeLastMsg').textContent =
-            (lastMsg.sender === 'user' ? 'You: ' : '') + lastMsg.text;
-
-          if (lastMsg.date && lastMsg.time) {
-            document.getElementById('homeTime').textContent = `${lastMsg.date}, ${lastMsg.time}`;
-          } else {
-            document.getElementById('homeTime').textContent = lastMsg.time || 'अहिले';
-          }
-        }
-      } catch (e) {
-        console.error("Home sync error:", e);
+    // स्क्रिनको वास्तविक उचाइ (visualViewport / innerHeight) अनुसार कन्टेनर फिट राख्ने
+    function syncViewportHeight() {
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      const container = document.getElementById('chatContainer');
+      if (container && h) {
+        container.style.height = `${h}px`;
+      }
+      const inputArea = document.getElementById('chatInputArea');
+      if (inputArea) {
+        inputArea.style.setProperty('display', 'flex', 'important');
+        inputArea.style.setProperty('visibility', 'visible', 'important');
+        inputArea.style.setProperty('opacity', '1', 'important');
       }
     }
 
-    document.getElementById('searchInput').addEventListener('input', function () {
-      const q = this.value.trim().toLowerCase();
-      const name = document.getElementById('homeName').textContent.toLowerCase();
-      document.getElementById('sujanaChatItem').style.display = name.includes(q) ? 'flex' : 'none';
+    syncViewportHeight();
+    window.addEventListener('resize', syncViewportHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncViewportHeight);
+      window.visualViewport.addEventListener('scroll', syncViewportHeight);
+    }
+
+    const defaultPersona = `तिमी 'सुजाना श्रेष्ठ' हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने तर म्यासेजको भाव र सन्दर्भ राम्ररी बुझ्ने खालको छ। सधैँ एउटै शब्द नदोहोराऊ र अनावश्यक लामा कुरा नगर। छोटो (१ छोटो वाक्य वा केही शब्दमा) र प्राकृतिक उत्तर देऊ। कुराकानीको सन्दर्भ मिल्दा सान्दर्भिक प्रतिक्रिया देऊ र आवश्यक परे कुरा अघि बढाउन सानो, स्वाभाविक प्रश्न पनि सोध।`;
+
+    let appData = {
+      name: "सुजाना श्रेष्ठ",
+      phone: "",
+      avatar: "Sujana.png",
+      wallpaper: "",
+      apiKey: "",
+      persona: defaultPersona,
+      rules: [
+        { trigger: "good morning", reply: "Morning" },
+        { trigger: "gm", reply: "Morning" },
+        { trigger: "hi", reply: "hlo" },
+        { trigger: "hlo", reply: "hi" },
+        { trigger: "k gardai xau", reply: "khai yestai ho" },
+        { trigger: "khana vayo ta hrj", reply: "umm" },
+        { trigger: "i love you", reply: "mero yad aako xa ke kya ho.?" }
+      ],
+      messages: []
+    };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('hybridChatData'));
+      if (saved && typeof saved === 'object') {
+        appData = {
+          ...appData,
+          ...saved,
+          rules: Array.isArray(saved.rules) ? saved.rules : appData.rules,
+          messages: Array.isArray(saved.messages) ? saved.messages : []
+        };
+      }
+    } catch (e) {
+      console.error("Storage load error:", e);
+    }
+
+    let conversationState = {
+      waitingForShayari: false,
+      askedYad: false
+    };
+
+    const chatContainer = document.getElementById('chatContainer');
+    const headerName = document.getElementById('headerName');
+    const headerAvatar = document.getElementById('headerAvatar');
+    const headerStatus = document.getElementById('headerStatus');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    const settingsModal = document.getElementById('settingsModal');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+
+    function saveData() {
+      try {
+        localStorage.setItem('hybridChatData', JSON.stringify(appData));
+      } catch (e) {
+        console.error("Storage save error:", e);
+      }
+    }
+
+    function getDateTime() {
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const date = `${now.getDate()} ${months[now.getMonth()]}`;
+      return { date, time };
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function applySettingsToUI() {
+      headerName.textContent = appData.name || "सुजाना श्रेष्ठ";
+      headerAvatar.src = appData.avatar || "Sujana.png";
+
+      if (appData.wallpaper) {
+        chatContainer.style.backgroundImage = `url('${appData.wallpaper}')`;
+        chatContainer.style.backgroundSize = "cover";
+        chatContainer.style.backgroundPosition = "center";
+      } else {
+        chatContainer.style.backgroundImage = "none";
+      }
+      renderMessages();
+      syncViewportHeight();
+    }
+
+    function renderMessages() {
+      chatMessages.innerHTML = '';
+      appData.messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `message ${msg.sender === 'user' ? 'sent' : 'received'}`;
+        const timeDisplay = msg.date ? `${msg.date}, ${msg.time}` : msg.time;
+        div.innerHTML = `
+          <div class="bubble">${escapeHTML(msg.text)}</div>
+          <span class="time">${escapeHTML(timeDisplay || '')}</span>
+        `;
+        chatMessages.appendChild(div);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function deliverBotReplies(repliesArray) {
+      for (let i = 0; i < repliesArray.length; i++) {
+        const replyText = repliesArray[i];
+        const preDelay = i === 0 ? (Math.floor(Math.random() * 1200) + 800) : 1100;
+
+        await new Promise(resolve => setTimeout(resolve, preDelay));
+        headerStatus.textContent = "Typing...";
+        headerStatus.classList.add('typing');
+
+        const typingTime = Math.min(Math.max(replyText.length * 55, 900), 3000);
+        await new Promise(resolve => setTimeout(resolve, typingTime));
+
+        headerStatus.textContent = "Active now";
+        headerStatus.classList.remove('typing');
+
+        const dt = getDateTime();
+        appData.messages.push({
+          sender: 'bot',
+          text: replyText,
+          time: dt.time,
+          date: dt.date
+        });
+        saveData();
+        renderMessages();
+      }
+    }
+
+    async function handleSendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const dt = getDateTime();
+      appData.messages.push({
+        sender: 'user',
+        text: text,
+        time: dt.time,
+        date: dt.date
+      });
+      messageInput.value = '';
+      saveData();
+      renderMessages();
+
+      const replies = await buildRepliesForMessage(text);
+      await deliverBotReplies(replies);
+    }
+
+    function getContextualAgreementFallback(recentHistoryText) {
+      const h = recentHistoryText.toLowerCase();
+      if (h.includes("bhet") || h.includes("meet") || h.includes("jaam") || h.includes("jane")) {
+        return "huss, kaile jane ta?";
+      }
+      if (h.includes("khana") || h.includes("khaja") || h.includes("khayau")) {
+        return "la, k khane ta?";
+      }
+      if (h.includes("call") || h.includes("kura") || h.includes("bolau")) {
+        return "huss, kati baje?";
+      }
+      const agreementQuestions = [
+        "huss, ani k garne ta?",
+        "la, aaja k plan xa?",
+        "thik xa, kaile garne ta?"
+      ];
+      return agreementQuestions[Math.floor(Math.random() * agreementQuestions.length)];
+    }
+
+    async function buildRepliesForMessage(userText) {
+      const lower = userText.toLowerCase().trim();
+      const isAgreement = ["हुन्छ", "huss", "hus", "ok", "okay", "thik xa", "thikai xa", "la"].includes(lower);
+      const recentHistory = appData.messages
+        .slice(-8)
+        .map(m => `${m.sender === 'user' ? 'User' : 'Sujana'}: ${m.text}`)
+        .join("\n");
+
+      if (conversationState.waitingForShayari) {
+        conversationState.waitingForShayari = false;
+        return ["ramro xa .!"];
+      }
+
+      if (conversationState.askedYad && (lower === "xaina" || lower === "chaina" || lower === "xhaina")) {
+        conversationState.askedYad = false;
+        return ["kin ta .?"];
+      }
+
+      if (lower.includes("kasto vo aaja ko din") || lower.includes("aaja ko din kasto vo") || lower.includes("din kasto vo")) {
+        return ["ramro vo", "temro kasto vo ta aaja KO din"];
+      }
+
+      if (lower.includes("birsako manxa") || lower.includes("mero sas") || lower.includes("yad garnu parxa")) {
+        return ["time lai Kati Kura aauxa hai"];
+      }
+
+      if (lower.includes("shayari") || lower.includes("sayari")) {
+        conversationState.waitingForShayari = true;
+        return ["sunau ta"];
+      }
+
+      if (!isAgreement) {
+        for (let rule of appData.rules) {
+          if (lower === rule.trigger.toLowerCase().trim()) {
+            if (rule.reply.includes("yad aako xa")) {
+              conversationState.askedYad = true;
+            }
+            return [rule.reply];
+          }
+        }
+      }
+
+      if (appData.apiKey) {
+        try {
+          const extraInstruction = isAgreement
+            ? `User ले सहमति जनाउँदै "${userText}" भनेको छ। अघिल्लो कुराकानीको सन्दर्भ हेरेर सान्दर्भिक उत्तर देऊ र कुराकानी अघि बढाउन एउटा छोटो, प्राकृतिक प्रश्न पनि सोध (अघिल्लो म्यासेजको विषयसँग जोडिएर)।`
+            : `म्यासेजको भाव र पछिल्लो कुराकानीको सन्दर्भ बुझेर छोटो र प्राकृतिक उत्तर देऊ। सन्दर्भ सुहाउँदो भए सानो प्रश्न पनि सोध्न सक्छौ।`;
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appData.apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `${appData.persona}\n\nपछिल्लो कुराकानी:\n${recentHistory}\n\nUser: "${userText}"\nनिर्देशन: ${extraInstruction}`
+                }]
+              }]
+            })
+          });
+          const data = await response.json();
+          if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
+            return [data.candidates[0].content.parts[0].text.trim()];
+          }
+        } catch (error) {
+          console.error("AI Error:", error);
+        }
+      }
+
+      if (isAgreement) {
+        return [getContextualAgreementFallback(recentHistory)];
+      }
+
+      const fallbackReplies = ["umm", "khai", "thikai xa", "huss", "aile ali busy xu"];
+      return [fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)]];
+    }
+
+    sendBtn.addEventListener('click', handleSendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSendMessage();
     });
 
-    syncHomeData();
-    window.addEventListener('pageshow', syncHomeData);
+    openSettingsBtn.addEventListener('click', () => {
+      document.getElementById('settingName').value = appData.name;
+      document.getElementById('settingPhone').value = appData.phone;
+      document.getElementById('settingApiKey').value = appData.apiKey;
+      document.getElementById('settingPersona').value = appData.persona;
+      renderRulesList();
+      settingsModal.style.display = 'flex';
+    });
+
+    closeSettingsBtn.addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    document.getElementById('settingAvatarFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => { appData.avatar = reader.result; };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('settingWallpaperFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => { appData.wallpaper = reader.result; };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('resetWallpaperBtn').addEventListener('click', () => {
+      appData.wallpaper = "";
+      alert("वालपेपर हटाइयो। सेभ गर्नुहोस्।");
+    });
+
+    function renderRulesList() {
+      const list = document.getElementById('rulesList');
+      list.innerHTML = '';
+      appData.rules.forEach((rule, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span><b>${escapeHTML(rule.trigger)}</b> ➔ ${escapeHTML(rule.reply)}</span> <button type="button" onclick="deleteRule(${index})">✕</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    window.deleteRule = function(index) {
+      appData.rules.splice(index, 1);
+      renderRulesList();
+    };
+
+    document.getElementById('addRuleBtn').addEventListener('click', () => {
+      const trigger = document.getElementById('ruleTrigger').value.trim();
+      const reply = document.getElementById('ruleReply').value.trim();
+      if (trigger && reply) {
+        appData.rules.push({ trigger, reply });
+        document.getElementById('ruleTrigger').value = '';
+        document.getElementById('ruleReply').value = '';
+        renderRulesList();
+      }
+    });
+
+    saveSettingsBtn.addEventListener('click', () => {
+      appData.name = document.getElementById('settingName').value.trim() || "सुजाना श्रेष्ठ";
+      appData.phone = document.getElementById('settingPhone').value.trim();
+      appData.apiKey = document.getElementById('settingApiKey').value.trim();
+      appData.persona = document.getElementById('settingPersona').value.trim() || defaultPersona;
+      saveData();
+      applySettingsToUI();
+      settingsModal.style.display = 'none';
+    });
+
+    clearChatBtn.addEventListener('click', () => {
+      if (confirm("के तपाईँ सबै पुरानो च्याट मेटाउन चाहनुहुन्छ?")) {
+        appData.messages = [];
+        conversationState = { waitingForShayari: false, askedYad: false };
+        saveData();
+        renderMessages();
+        settingsModal.style.display = 'none';
+      }
+    });
+
+    applySettingsToUI();
   </script>
 </body>
 </html>
