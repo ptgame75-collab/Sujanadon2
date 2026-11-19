@@ -274,7 +274,7 @@
   </div>
 
   <script>
-    const defaultPersona = `तिमी 'सुजाना श्रेष्ठ' हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने र सधैँ एकै किसिमको उत्तर नदिने खालको छ। म्यासेजको भाव र सन्दर्भ बुझेर छोटो (१-३ शब्द वा एक छोटो वाक्यमा) र प्राकृतिक उत्तर देऊ। सधैँ उही शब्द नदोहोराऊ र अनावश्यक लामा कुरा नगर।`;
+    const defaultPersona = `तिमी 'सुजाना श्रेष्ठ' हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने तर म्यासेजको भाव र सन्दर्भ राम्ररी बुझ्ने खालको छ। सधैँ एउटै शब्द नदोहोराऊ र अनावश्यक लामा कुरा नगर। छोटो (१ छोटो वाक्य वा केही शब्दमा) र प्राकृतिक उत्तर देऊ। कुराकानीको सन्दर्भ मिल्दा सान्दर्भिक प्रतिक्रिया देऊ र आवश्यक परे कुरा अघि बढाउन सानो, स्वाभाविक प्रश्न पनि सोध।`;
 
     let appData = {
       name: "सुजाना श्रेष्ठ",
@@ -428,51 +428,87 @@
       await deliverBotReplies(replies);
     }
 
+    function getContextualAgreementFallback(recentHistoryText) {
+      const h = recentHistoryText.toLowerCase();
+      if (h.includes("bhet") || h.includes("meet") || h.includes("jaam") || h.includes("jane")) {
+        return "huss, kaile jane ta?";
+      }
+      if (h.includes("khana") || h.includes("khaja") || h.includes("khayau")) {
+        return "la, k khane ta?";
+      }
+      if (h.includes("call") || h.includes("kura") || h.includes("bolau")) {
+        return "huss, kati baje?";
+      }
+      const agreementQuestions = [
+        "huss, ani k garne ta?",
+        "la, aaja k plan xa?",
+        "thik xa, kaile garne ta?"
+      ];
+      return agreementQuestions[Math.floor(Math.random() * agreementQuestions.length)];
+    }
+
     async function buildRepliesForMessage(userText) {
       const lower = userText.toLowerCase().trim();
+      const isAgreement = ["हुन्छ", "huss", "hus", "ok", "okay", "thik xa", "thikai xa", "la"].includes(lower);
+      const recentHistory = appData.messages
+        .slice(-8)
+        .map(m => `${m.sender === 'user' ? 'User' : 'Sujana'}: ${m.text}`)
+        .join("\n");
 
+      // १. शायरी पर्खिरहेको अवस्था
       if (conversationState.waitingForShayari) {
         conversationState.waitingForShayari = false;
         return ["ramro xa .!"];
       }
 
+      // २. "mero yad aako xa..." सोधिसकेपछिको "xaina"
       if (conversationState.askedYad && (lower === "xaina" || lower === "chaina" || lower === "xhaina")) {
         conversationState.askedYad = false;
         return ["kin ta .?"];
       }
 
+      // ३. दिन कस्तो रह्यो भन्ने कुराकानी (डबल म्यासेज)
       if (lower.includes("kasto vo aaja ko din") || lower.includes("aaja ko din kasto vo") || lower.includes("din kasto vo")) {
         return ["ramro vo", "temro kasto vo ta aaja KO din"];
       }
 
+      // ४. भावुक/याद सम्बन्धी म्यासेजमा
       if (lower.includes("birsako manxa") || lower.includes("mero sas") || lower.includes("yad garnu parxa")) {
         return ["time lai Kati Kura aauxa hai"];
       }
 
+      // ५. शायरीको कुरा गर्दा
       if (lower.includes("shayari") || lower.includes("sayari")) {
         conversationState.waitingForShayari = true;
         return ["sunau ta"];
       }
 
-      for (let rule of appData.rules) {
-        if (lower === rule.trigger.toLowerCase().trim()) {
-          if (rule.reply.includes("yad aako xa")) {
-            conversationState.askedYad = true;
+      // ६. Custom Rules जाँच ("हुन्छ" मा AI लाई सान्दर्भिक प्रश्न सोध्न दिनुहोस् यदि API Key छ भने)
+      if (!isAgreement) {
+        for (let rule of appData.rules) {
+          if (lower === rule.trigger.toLowerCase().trim()) {
+            if (rule.reply.includes("yad aako xa")) {
+              conversationState.askedYad = true;
+            }
+            return [rule.reply];
           }
-          return [rule.reply];
         }
       }
 
+      // ७. Gemini API Dynamic Reply (सन्दर्भ र सान्दर्भिक प्रश्नसहित)
       if (appData.apiKey) {
         try {
-          const recentHistory = appData.messages.slice(-6).map(m => `${m.sender === 'user' ? 'User' : 'You'}: ${m.text}`).join("\n");
+          const extraInstruction = isAgreement
+            ? `User ले सहमति जनाउँदै "${userText}" भनेको छ। अघिल्लो कुराकानीको सन्दर्भ हेरेर सान्दर्भिक उत्तर देऊ र कुराकानी अघि बढाउन एउटा छोटो, प्राकृतिक प्रश्न पनि सोध (अघिल्लो म्यासेजको विषयसँग जोडिएर)।`
+            : `म्यासेजको भाव र पछिल्लो कुराकानीको सन्दर्भ बुझेर छोटो र प्राकृतिक उत्तर देऊ। सन्दर्भ सुहाउँदो भए सानो प्रश्न पनि सोध्न सक्छौ।`;
+
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appData.apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `${appData.persona}\n\nपछिल्लो कुराकानी:\n${recentHistory}\n\nUser: "${userText}"\nभाव बुझेर छोटो र प्राकृतिक उत्तर देऊ:`
+                  text: `${appData.persona}\n\nपछिल्लो कुराकानी:\n${recentHistory}\n\nUser: "${userText}"\nनिर्देशन: ${extraInstruction}`
                 }]
               }]
             })
@@ -484,6 +520,11 @@
         } catch (error) {
           console.error("AI Error:", error);
         }
+      }
+
+      // ८. Fallback उत्तरहरू
+      if (isAgreement) {
+        return [getContextualAgreementFallback(recentHistory)];
       }
 
       const fallbackReplies = ["umm", "khai", "thikai xa", "huss", "aile ali busy xu"];
