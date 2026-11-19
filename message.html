@@ -7,11 +7,17 @@
   <title>Message</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    * {
+      box-sizing: border-box;
+    }
     html, body {
       height: 100%;
+      width: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
     }
     .app-container {
       display: flex;
@@ -19,34 +25,158 @@
       height: 100vh;
       height: 100dvh;
       width: 100%;
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
+      right: 0;
+      bottom: 0;
       background-color: #ffffff;
+      overflow: hidden;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background-color: #ffffff;
+      border-bottom: 1px solid #e4e6eb;
+      flex-shrink: 0;
+      z-index: 5;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
     }
     .back-btn {
       text-decoration: none;
       color: #0084ff;
       font-size: 24px;
-      margin-right: 10px;
+      padding: 4px 8px 4px 2px;
       display: flex;
       align-items: center;
+      justify-content: center;
       line-height: 1;
+      flex-shrink: 0;
     }
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .user-info {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      min-width: 0;
+    }
+    .user-info h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #050505;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status-text {
+      font-size: 12px;
+      color: #65676b;
+    }
+    .status-text.typing {
+      color: #0084ff;
+      font-weight: 500;
+    }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      flex-shrink: 0;
+    }
+    .chat-messages {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 78%;
+    }
+    .message.sent {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .message.received {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+    .bubble {
+      padding: 9px 14px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .message.sent .bubble {
+      background-color: #0084ff;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+    .message.received .bubble {
+      background-color: #f0f2f5;
+      color: #050505;
+      border-bottom-left-radius: 4px;
+    }
+    .time {
+      font-size: 11px;
+      color: #8a8d91;
+      margin-top: 3px;
+      padding: 0 4px;
     }
     .chat-input-area {
       display: flex;
       align-items: center;
-      padding: 10px 16px;
+      gap: 8px;
+      padding: 10px 12px;
       background-color: #ffffff;
       border-top: 1px solid #e4e6eb;
+      flex-shrink: 0;
+      width: 100%;
+      z-index: 10;
+    }
+    #messageInput {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 14px;
+      border: 1px solid #ccd0d5;
+      border-radius: 20px;
+      font-size: 15px;
+      outline: none;
+      background-color: #f0f2f5;
+      color: #050505;
+    }
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background-color: #0084ff;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
     }
   </style>
@@ -146,7 +276,7 @@
   <script>
     const defaultPersona = `तिमी 'सुजाना श्रेष्ठ' हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने र सधैँ एकै किसिमको उत्तर नदिने खालको छ। म्यासेजको भाव र सन्दर्भ बुझेर छोटो (१-३ शब्द वा एक छोटो वाक्यमा) र प्राकृतिक उत्तर देऊ। सधैँ उही शब्द नदोहोराऊ र अनावश्यक लामा कुरा नगर।`;
 
-    let appData = JSON.parse(localStorage.getItem('hybridChatData')) || {
+    let appData = {
       name: "सुजाना श्रेष्ठ",
       phone: "",
       avatar: "Sujana.png",
@@ -164,6 +294,20 @@
       ],
       messages: []
     };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('hybridChatData'));
+      if (saved && typeof saved === 'object') {
+        appData = {
+          ...appData,
+          ...saved,
+          rules: Array.isArray(saved.rules) ? saved.rules : appData.rules,
+          messages: Array.isArray(saved.messages) ? saved.messages : []
+        };
+      }
+    } catch (e) {
+      console.error("Storage load error:", e);
+    }
 
     let conversationState = {
       waitingForShayari: false,
@@ -185,7 +329,11 @@
     const clearChatBtn = document.getElementById('clearChatBtn');
 
     function saveData() {
-      localStorage.setItem('hybridChatData', JSON.stringify(appData));
+      try {
+        localStorage.setItem('hybridChatData', JSON.stringify(appData));
+      } catch (e) {
+        console.error("Storage save error:", e);
+      }
     }
 
     function getDateTime() {
@@ -194,6 +342,15 @@
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const date = `${now.getDate()} ${months[now.getMonth()]}`;
       return { date, time };
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     function applySettingsToUI() {
@@ -217,8 +374,8 @@
         div.className = `message ${msg.sender === 'user' ? 'sent' : 'received'}`;
         const timeDisplay = msg.date ? `${msg.date}, ${msg.time}` : msg.time;
         div.innerHTML = `
-          <div class="bubble">${msg.text}</div>
-          <span class="time">${timeDisplay}</span>
+          <div class="bubble">${escapeHTML(msg.text)}</div>
+          <span class="time">${escapeHTML(timeDisplay || '')}</span>
         `;
         chatMessages.appendChild(div);
       });
@@ -379,7 +536,7 @@
       list.innerHTML = '';
       appData.rules.forEach((rule, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span><b>${rule.trigger}</b> ➔ ${rule.reply}</span> <button onclick="deleteRule(${index})">✕</button>`;
+        li.innerHTML = `<span><b>${escapeHTML(rule.trigger)}</b> ➔ ${escapeHTML(rule.reply)}</span> <button type="button" onclick="deleteRule(${index})">✕</button>`;
         list.appendChild(li);
       });
     }
