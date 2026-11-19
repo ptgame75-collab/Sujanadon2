@@ -5,34 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0084ff">
   <title>Message</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=5">
   <style>
     * {
       box-sizing: border-box;
     }
+
     html, body {
-      height: 100%;
-      width: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #ffffff;
-    }
-    .app-container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      height: 100dvh;
       width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .app-container {
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
       background-color: #ffffff;
       overflow: hidden;
     }
+
     .chat-header {
       display: flex;
       align-items: center;
@@ -41,14 +41,16 @@
       background-color: #ffffff;
       border-bottom: 1px solid #e4e6eb;
       flex-shrink: 0;
-      z-index: 5;
+      z-index: 20;
     }
+
     .header-left {
       display: flex;
       align-items: center;
       gap: 10px;
       min-width: 0;
     }
+
     .back-btn {
       text-decoration: none;
       color: #0084ff;
@@ -60,6 +62,7 @@
       line-height: 1;
       flex-shrink: 0;
     }
+
     .avatar {
       width: 40px;
       height: 40px;
@@ -67,11 +70,13 @@
       object-fit: cover;
       flex-shrink: 0;
     }
+
     .user-info {
       display: flex;
       flex-direction: column;
       min-width: 0;
     }
+
     .user-info h2 {
       margin: 0;
       font-size: 16px;
@@ -81,14 +86,17 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .status-text {
       font-size: 12px;
       color: #65676b;
     }
+
     .status-text.typing {
       color: #0084ff;
       font-weight: 500;
     }
+
     .icon-btn {
       background: transparent;
       border: none;
@@ -97,6 +105,7 @@
       padding: 6px;
       flex-shrink: 0;
     }
+
     .chat-messages {
       flex: 1 1 auto;
       min-height: 0;
@@ -106,20 +115,25 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      background-color: transparent;
     }
+
     .message {
       display: flex;
       flex-direction: column;
       max-width: 78%;
     }
+
     .message.sent {
       align-self: flex-end;
       align-items: flex-end;
     }
+
     .message.received {
       align-self: flex-start;
       align-items: flex-start;
     }
+
     .bubble {
       padding: 9px 14px;
       border-radius: 18px;
@@ -127,35 +141,44 @@
       line-height: 1.4;
       word-wrap: break-word;
     }
+
     .message.sent .bubble {
       background-color: #0084ff;
       color: #ffffff;
       border-bottom-right-radius: 4px;
     }
+
     .message.received .bubble {
       background-color: #f0f2f5;
       color: #050505;
       border-bottom-left-radius: 4px;
     }
+
     .time {
       font-size: 11px;
       color: #8a8d91;
       margin-top: 3px;
       padding: 0 4px;
     }
+
+    /* सधैँ देखिने म्यासेज लेख्ने बक्स */
     .chat-input-area {
-      display: flex;
+      display: flex !important;
       align-items: center;
       gap: 8px;
+      width: 100%;
+      min-height: 60px;
       padding: 10px 12px;
       background-color: #ffffff;
       border-top: 1px solid #e4e6eb;
       flex-shrink: 0;
-      width: 100%;
-      z-index: 10;
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 30;
     }
+
     #messageInput {
-      flex: 1;
+      flex: 1 1 auto;
       min-width: 0;
       padding: 10px 14px;
       border: 1px solid #ccd0d5;
@@ -165,6 +188,7 @@
       background-color: #f0f2f5;
       color: #050505;
     }
+
     .send-btn {
       width: 40px;
       height: 40px;
@@ -185,7 +209,6 @@
 
   <div class="app-container" id="chatContainer">
 
-    <!-- हेडर (ब्याक बटनले index.html मा फर्काउँछ) -->
     <header class="chat-header">
       <div class="header-left">
         <a href="index.html" class="back-btn" title="Back">❮</a>
@@ -200,14 +223,12 @@
       </div>
     </header>
 
-    <!-- म्यासेज बबलहरू देखिने ठाउँ -->
     <main class="chat-messages" id="chatMessages"></main>
 
-    <!-- म्यासेज लेख्ने र पठाउने बक्स -->
-    <footer class="chat-input-area">
+    <div class="chat-input-area" id="chatInputArea">
       <input type="text" id="messageInput" placeholder="म्यासेज लेख्नुहोस्..." autocomplete="off">
       <button id="sendBtn" class="send-btn">➤</button>
-    </footer>
+    </div>
 
   </div>
 
@@ -274,6 +295,28 @@
   </div>
 
   <script>
+    // स्क्रिनको वास्तविक उचाइ (visualViewport / innerHeight) अनुसार कन्टेनर फिट राख्ने
+    function syncViewportHeight() {
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      const container = document.getElementById('chatContainer');
+      if (container && h) {
+        container.style.height = `${h}px`;
+      }
+      const inputArea = document.getElementById('chatInputArea');
+      if (inputArea) {
+        inputArea.style.setProperty('display', 'flex', 'important');
+        inputArea.style.setProperty('visibility', 'visible', 'important');
+        inputArea.style.setProperty('opacity', '1', 'important');
+      }
+    }
+
+    syncViewportHeight();
+    window.addEventListener('resize', syncViewportHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncViewportHeight);
+      window.visualViewport.addEventListener('scroll', syncViewportHeight);
+    }
+
     const defaultPersona = `तिमी 'सुजाना श्रेष्ठ' हौ र नेपाली वा रोमन नेपालीमा च्याट गर्छौ। तिम्रो स्वभाव अलि स्वाभिमानी, आफ्नो काममा व्यस्त रहने तर म्यासेजको भाव र सन्दर्भ राम्ररी बुझ्ने खालको छ। सधैँ एउटै शब्द नदोहोराऊ र अनावश्यक लामा कुरा नगर। छोटो (१ छोटो वाक्य वा केही शब्दमा) र प्राकृतिक उत्तर देऊ। कुराकानीको सन्दर्भ मिल्दा सान्दर्भिक प्रतिक्रिया देऊ र आवश्यक परे कुरा अघि बढाउन सानो, स्वाभाविक प्रश्न पनि सोध।`;
 
     let appData = {
@@ -365,6 +408,7 @@
         chatContainer.style.backgroundImage = "none";
       }
       renderMessages();
+      syncViewportHeight();
     }
 
     function renderMessages() {
@@ -455,35 +499,29 @@
         .map(m => `${m.sender === 'user' ? 'User' : 'Sujana'}: ${m.text}`)
         .join("\n");
 
-      // १. शायरी पर्खिरहेको अवस्था
       if (conversationState.waitingForShayari) {
         conversationState.waitingForShayari = false;
         return ["ramro xa .!"];
       }
 
-      // २. "mero yad aako xa..." सोधिसकेपछिको "xaina"
       if (conversationState.askedYad && (lower === "xaina" || lower === "chaina" || lower === "xhaina")) {
         conversationState.askedYad = false;
         return ["kin ta .?"];
       }
 
-      // ३. दिन कस्तो रह्यो भन्ने कुराकानी (डबल म्यासेज)
       if (lower.includes("kasto vo aaja ko din") || lower.includes("aaja ko din kasto vo") || lower.includes("din kasto vo")) {
         return ["ramro vo", "temro kasto vo ta aaja KO din"];
       }
 
-      // ४. भावुक/याद सम्बन्धी म्यासेजमा
       if (lower.includes("birsako manxa") || lower.includes("mero sas") || lower.includes("yad garnu parxa")) {
         return ["time lai Kati Kura aauxa hai"];
       }
 
-      // ५. शायरीको कुरा गर्दा
       if (lower.includes("shayari") || lower.includes("sayari")) {
         conversationState.waitingForShayari = true;
         return ["sunau ta"];
       }
 
-      // ६. Custom Rules जाँच ("हुन्छ" मा AI लाई सान्दर्भिक प्रश्न सोध्न दिनुहोस् यदि API Key छ भने)
       if (!isAgreement) {
         for (let rule of appData.rules) {
           if (lower === rule.trigger.toLowerCase().trim()) {
@@ -495,7 +533,6 @@
         }
       }
 
-      // ७. Gemini API Dynamic Reply (सन्दर्भ र सान्दर्भिक प्रश्नसहित)
       if (appData.apiKey) {
         try {
           const extraInstruction = isAgreement
@@ -522,7 +559,6 @@
         }
       }
 
-      // ८. Fallback उत्तरहरू
       if (isAgreement) {
         return [getContextualAgreementFallback(recentHistory)];
       }
