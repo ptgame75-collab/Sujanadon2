@@ -6,8 +6,11 @@
   <meta name="theme-color" content="#ffffff">
   <title>Messenger - Chats</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
-      background-color: #fff;
+      background-color: #ffffff;
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
@@ -18,7 +21,7 @@
       padding: 15px 20px;
       font-size: 24px;
       font-weight: bold;
-      color: #000;
+      color: #050505;
     }
     .search-bar-container {
       padding: 0 16px 10px 16px;
@@ -31,7 +34,7 @@
       border-radius: 20px;
       font-size: 15px;
       outline: none;
-      box-sizing: border-box;
+      color: #050505;
     }
     .chat-list {
       list-style: none;
@@ -53,6 +56,7 @@
     .chat-avatar-container {
       position: relative;
       margin-right: 14px;
+      flex-shrink: 0;
     }
     .chat-avatar {
       width: 56px;
@@ -67,7 +71,7 @@
       width: 14px;
       height: 14px;
       background-color: #31a24c;
-      border: 2px solid #fff;
+      border: 2px solid #ffffff;
       border-radius: 50%;
     }
     .chat-details {
@@ -93,6 +97,7 @@
       color: #65676b;
       text-align: right;
       white-space: nowrap;
+      margin-left: 8px;
     }
   </style>
 </head>
@@ -103,12 +108,11 @@
   </header>
 
   <div class="search-bar-container">
-    <input type="text" class="search-bar" placeholder="Search">
+    <input type="text" class="search-bar" id="searchInput" placeholder="Search">
   </div>
 
   <ul class="chat-list">
-    <!-- सुजानाको च्याटमा क्लिक गरेपछि index.html (च्याट बक्स) खुल्छ -->
-    <a href="index.html" class="chat-item">
+    <a href="message.html" class="chat-item" id="sujanaChatItem">
       <div class="chat-avatar-container">
         <img src="Sujana.png" alt="Sujana" class="chat-avatar" id="homeAvatar">
         <span class="online-badge"></span>
@@ -124,24 +128,41 @@
   </ul>
 
   <script>
-    const savedData = JSON.parse(localStorage.getItem('hybridChatData'));
-    if (savedData) {
-      if (savedData.name) {
-        document.getElementById('homeName').textContent = savedData.name;
-      }
-      if (savedData.avatar) {
-        document.getElementById('homeAvatar').src = savedData.avatar;
-      }
-      if (savedData.messages && savedData.messages.length > 0) {
-        const lastMsg = savedData.messages[savedData.messages.length - 1];
-        document.getElementById('homeLastMsg').textContent = (lastMsg.sender === 'user' ? 'You: ' : '') + lastMsg.text;
-        if (lastMsg.date && lastMsg.time) {
-          document.getElementById('homeTime').textContent = `${lastMsg.date}, ${lastMsg.time}`;
-        } else {
-          document.getElementById('homeTime').textContent = lastMsg.time || 'अहिले';
+    function syncHomeData() {
+      try {
+        const savedData = JSON.parse(localStorage.getItem('hybridChatData'));
+        if (!savedData) return;
+
+        if (savedData.name) {
+          document.getElementById('homeName').textContent = savedData.name;
         }
+        if (savedData.avatar) {
+          document.getElementById('homeAvatar').src = savedData.avatar;
+        }
+        if (savedData.messages && savedData.messages.length > 0) {
+          const lastMsg = savedData.messages[savedData.messages.length - 1];
+          document.getElementById('homeLastMsg').textContent =
+            (lastMsg.sender === 'user' ? 'You: ' : '') + lastMsg.text;
+
+          if (lastMsg.date && lastMsg.time) {
+            document.getElementById('homeTime').textContent = `${lastMsg.date}, ${lastMsg.time}`;
+          } else {
+            document.getElementById('homeTime').textContent = lastMsg.time || 'अहिले';
+          }
+        }
+      } catch (e) {
+        console.error("Home sync error:", e);
       }
     }
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      const name = document.getElementById('homeName').textContent.toLowerCase();
+      document.getElementById('sujanaChatItem').style.display = name.includes(q) ? 'flex' : 'none';
+    });
+
+    syncHomeData();
+    window.addEventListener('pageshow', syncHomeData);
   </script>
 </body>
 </html>
